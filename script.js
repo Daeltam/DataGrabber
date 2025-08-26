@@ -66,7 +66,7 @@ function getDeviceInfo() {
 getIpInfo().then(ipInfo => {
     const deviceInfo = getDeviceInfo();
 
-    emailjs.send("service_5fifa81", "service_5fifa81", {
+    emailjs.send("service_5fifa81", "template_w5liz9g", {
         ip: ipInfo.ip,
         network: ipInfo.network,
         version: ipInfo.version,

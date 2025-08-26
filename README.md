@@ -4,6 +4,11 @@
 This project is for **educational purposes only**.  
 It demonstrates how websites can collect technical information about visitors (such as browser, device, and IP details) using simple code.
 
+## You have entered and you want to be secure ?
+Send me an email to contact.daeltam@gmail.com and I will confirm I have deleted your data.
+
+This website will be taken down soon to avoid involuntary grabs.
+
 ## What does this site do?
 
 - Shows a clear warning that data is being collected for demonstration.

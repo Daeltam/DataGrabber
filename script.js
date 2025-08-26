@@ -9,7 +9,7 @@
 
 // Fetch the visitor's IP using ipinfo.io (free, limited usage)
 function getIPInfo() {
-    return fetch("https://ipinfo.io/json?token=347837a25e2357") // <-- Get a free token at ipinfo.io
+    return fetch("https://ipapi.co/json/") // <-- Get a free token at ipinfo.io
         .then(response => response.json())
         .catch(() => ({ ip: "Unavailable", city: "", region: "", country: "" }));
 }

